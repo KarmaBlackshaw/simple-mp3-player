@@ -117,6 +117,9 @@
                     Album
                   </th>
                   <th class="text-left">
+                    Duration
+                  </th>
+                  <th class="text-left">
                   </th>
                 </tr>
               </thead>
@@ -131,6 +134,7 @@
                   <td>{{ item.title }}</td>
                   <td>{{ item.artist }}</td>
                   <td>{{ item.album }}</td>
+                  <td>{{ getAudioDuration(item.audio.duration) }}</td>
                   <td>
                     <v-btn
                       text
@@ -165,7 +169,7 @@
           class="pa-0 ma-0"
         >
           <v-progress-linear
-            :value="playing.audio.currentTime"
+            :value="playing.time"
             class="my-0"
             height="3"
           />
@@ -432,6 +436,19 @@ export default {
   },
 
   methods: {
+    getAudioDuration(time){
+      let mins = Math.floor(time / 60);
+      if (mins < 10) {
+        mins = '0' + String(mins);
+      }
+      let secs = Math.floor(time % 60);
+      if (secs < 10) {
+        secs = '0' + String(secs);
+      }
+
+      return mins + ':' + secs;
+    },
+
     handleClickShowEditModal({ item, index }) {
       const modal = this.modals.editSong;
 
@@ -465,6 +482,13 @@ export default {
       this.playing = {...item, index: itemKey}
 
       this.playing.audio.play()
+
+      const duration = this.playing.audio.duration
+      this.playing.audio.addEventListener('timeupdate',  () => {
+        this.playing.time = (this.playing.audio.currentTime.toFixed() / duration) * 100
+        this.playing.__ob__.dep.notify();
+      })
+
     },
 
     async getPlaylist () {

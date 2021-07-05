@@ -41,7 +41,7 @@ class SongsController extends Controller
             'path' => $filename
         ]);
 
-        return $test;
+        return $song;
 
     }
 

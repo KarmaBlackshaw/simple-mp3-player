@@ -124,6 +124,9 @@
                 <tr
                   v-for="(item, itemKey) in songs"
                   :key="itemKey"
+                  :class="{
+                    'blue lighten-4': playing && playing.index === itemKey
+                  }"
                 >
                   <td>{{ item.title }}</td>
                   <td>{{ item.artist }}</td>
@@ -133,7 +136,7 @@
                       text
                       small
                       rounded
-                      @click="handlePlay({ item })"
+                      @click="handleClickPlay({ item, itemKey })"
                     >
                       <v-icon>mdi-play</v-icon>
                     </v-btn>
@@ -156,12 +159,13 @@
         class="pa-0"
       >
         <v-card
+          v-if="playing"
           flat
           color="transparent"
           class="pa-0 ma-0"
         >
           <v-progress-linear
-            :value="50"
+            :value="playing.audio.currentTime"
             class="my-0"
             height="3"
           />
@@ -169,9 +173,9 @@
           <v-list>
             <v-list-item>
               <v-list-item-content>
-                <v-list-item-title>The Walker</v-list-item-title>
+                <v-list-item-title>{{ playing.name }}</v-list-item-title>
                 <v-list-item-subtitle>
-                  Fitz & The Trantrums
+                  {{ playing.artist }} / {{ playing.album }}
                 </v-list-item-subtitle>
               </v-list-item-content>
 
@@ -186,8 +190,21 @@
               <v-list-item-icon
                 :class="{ 'mx-5': $vuetify.breakpoint.mdAndUp }"
               >
-                <v-btn icon>
+                {{ isPlaying }}
+                <v-btn
+                  v-if="!playing.audio.paused"
+                  icon
+                  @click="playing.audio.pause()"
+                >
                   <v-icon>mdi-pause</v-icon>
+                </v-btn>
+
+                <v-btn
+                  v-else
+                  icon
+                  @click="playing.audio.play()"
+                >
+                  <v-icon>mdi-play</v-icon>
                 </v-btn>
               </v-list-item-icon>
 
@@ -331,6 +348,8 @@ export default {
   data: () => ({
     drawer: 1,
 
+    playing: null,
+
     modals: {
       addSong: {
         status: 0,
@@ -391,13 +410,28 @@ export default {
     playlists: []
   }),
 
+  computed: {
+    isPlaying() {
+      const currentPlaying = this.playing
+
+      if (!currentPlaying) {
+        return false
+      }
+
+      if (!currentPlaying.paused || currentPlaying.currentTime) {
+        return true
+      }
+
+      return true
+    }
+  },
+
   async created () {
     await this.getPlaylist()
     await this.getSongs()
   },
 
   methods: {
-
     handleClickShowEditModal({ item, index }) {
       const modal = this.modals.editSong;
 
@@ -422,8 +456,15 @@ export default {
       this.songs.splice(index, 1);
     },
 
-    handlePlay ({item}) {
-      console.log(item)
+    handleClickPlay ({item, itemKey}) {
+      if (this.playing) {
+        this.playing.audio.pause();
+        this.playing = null
+      }
+
+      this.playing = {...item, index: itemKey}
+
+      this.playing.audio.play()
     },
 
     async getPlaylist () {
@@ -458,7 +499,14 @@ export default {
       try {
         const response = await axios.get('/songs')
 
-        this.songs = response.data
+        const songs = response.data
+
+        for (let i = 0; i < songs.length; i++) {
+          const curr = songs[i];
+          curr.audio = new Audio(`http://localhost:8000/storage/${curr.path}`)
+        }
+
+        this.songs = songs
 
         return response.data
       } catch (error) {

@@ -10,5 +10,5 @@ class Song extends Model
 
     protected $primaryKey = 'id';
 
-    protected $fillable = ['name', 'path'];
+    protected $fillable = ['title', 'artist', 'album', 'path'];
 }

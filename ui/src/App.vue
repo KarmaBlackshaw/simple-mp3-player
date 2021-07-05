@@ -116,6 +116,8 @@
                   <th class="text-left">
                     Album
                   </th>
+                  <th class="text-left">
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -126,6 +128,16 @@
                   <td>{{ item.title }}</td>
                   <td>{{ item.artist }}</td>
                   <td>{{ item.album }}</td>
+                  <td>
+                    <v-btn
+                      text
+                      small
+                      rounded
+                      @click="handlePlay({ item })"
+                    >
+                      <v-icon>mdi-play</v-icon>
+                    </v-btn>
+                  </td>
                 </tr>
               </tbody>
             </template>
@@ -207,13 +219,21 @@
             v-model="modals.addSong.data.title"
             label="Title"
           />
+
           <v-text-field
             v-model="modals.addSong.data.artist"
             label="Artist"
           />
+
           <v-text-field
             v-model="modals.addSong.data.album"
             label="Album"
+          />
+
+          <v-file-input
+            v-model="modals.addSong.data.file"
+            accept="audio/*"
+            label="Song"
           />
         </v-card-text>
 
@@ -305,6 +325,8 @@
 </template>
 
 <script>
+import axios from '@/plugins/axios'
+
 export default {
   data: () => ({
     drawer: 1,
@@ -316,7 +338,7 @@ export default {
           title: null,
           artist: null,
           album: null,
-          duration: null
+          file: null
         },
         reset() {
           this.status = 0;
@@ -324,7 +346,7 @@ export default {
             title: null,
             artist: null,
             album: null,
-            duration: null
+            file: null
           };
         }
       },
@@ -369,14 +391,12 @@ export default {
     playlists: []
   }),
 
+  async created () {
+    await this.getPlaylist()
+    await this.getSongs()
+  },
+
   methods: {
-    handleClickCreateSong() {
-      const modal = this.modals.addSong;
-
-      this.songs.push(modal.data);
-
-      modal.reset();
-    },
 
     handleClickShowEditModal({ item, index }) {
       const modal = this.modals.editSong;
@@ -402,12 +422,70 @@ export default {
       this.songs.splice(index, 1);
     },
 
-    handleClickCreatePlaylist () {
-      const modal = this.modals.addPlaylist;
+    handlePlay ({item}) {
+      console.log(item)
+    },
 
-      this.playlists.push(modal.data)
+    async getPlaylist () {
+      try {
+        const response = await axios.get('/playlists')
 
-      modal.reset()
+        this.playlists = response.data
+
+        return response.data
+      } catch (error) {
+        console.log(error)
+      }
+    },
+
+    async handleClickCreatePlaylist () {
+      try {
+        const modal = this.modals.addPlaylist;
+
+        await axios.post('/playlists', {
+          name: modal.data.name
+        })
+
+        await this.getPlaylist()
+
+        modal.reset()
+      } catch (error) {
+        console.log(error)
+      }
+    },
+
+    async getSongs () {
+      try {
+        const response = await axios.get('/songs')
+
+        this.songs = response.data
+
+        return response.data
+      } catch (error) {
+        console.log(error)
+      }
+    },
+
+    async handleClickCreateSong() {
+      try {
+        const modal = this.modals.addSong;
+
+        const formData = new FormData();
+
+        formData.append('title', modal.data.title)
+        formData.append('artist', modal.data.artist)
+        formData.append('album', modal.data.album)
+        formData.append('file', modal.data.file)
+
+        const repsonse = await axios.post('/songs', formData)
+        console.log(repsonse)
+
+        await this.getSongs()
+
+        modal.reset();
+      } catch (error) {
+        console.log(error)
+      }
     }
   }
 };

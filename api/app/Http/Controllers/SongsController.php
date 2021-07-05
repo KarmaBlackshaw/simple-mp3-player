@@ -25,15 +25,23 @@ class SongsController extends Controller
      */
     public function store(Request $request)
     {
-        $name = $request->input('name');
-        $path = $request->file('file')->store('file');
+        $title = $request->input('title');
+        $artist = $request->input('artist');
+        $album = $request->input('album');
+        $path = $request->file('file')->store('public');
+
+        $filename = explode('/', $path)[1];
+
+
 
         $song = Song::create([
-            'name' => $name,
-            'path' => $path
+            'title' => $title,
+            'artist' => $artist,
+            'album' => $album,
+            'path' => $filename
         ]);
 
-        return $song;
+        return $test;
 
     }
 

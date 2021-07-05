@@ -116,9 +116,6 @@
                   <th class="text-left">
                     Album
                   </th>
-                  <th class="text-left">
-                    Duration
-                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -129,7 +126,6 @@
                   <td>{{ item.title }}</td>
                   <td>{{ item.artist }}</td>
                   <td>{{ item.album }}</td>
-                  <td>{{ item.duration }}</td>
                 </tr>
               </tbody>
             </template>
@@ -219,10 +215,6 @@
             v-model="modals.addSong.data.album"
             label="Album"
           />
-          <v-text-field
-            v-model="modals.addSong.data.duration"
-            label="Duration"
-          />
         </v-card-text>
 
         <v-divider />
@@ -261,10 +253,6 @@
           <v-text-field
             v-model="modals.editSong.data.album"
             label="Album"
-          />
-          <v-text-field
-            v-model="modals.editSong.data.duration"
-            label="Duration"
           />
         </v-card-text>
 

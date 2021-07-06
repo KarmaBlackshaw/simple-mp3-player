@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use App\SongPlaylist;
 
 class SongPlaylistsController extends Controller
@@ -65,8 +66,14 @@ class SongPlaylistsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(Request $request)
     {
-        //
+        $song_id = $request->input('song_id');
+        $playlist_id = $request->input('playlist_id');
+
+        return DB::table('song_playlists')
+            ->where('song_id', $song_id)
+            ->where('playlist_id', $playlist_id)
+            ->delete();
     }
 }

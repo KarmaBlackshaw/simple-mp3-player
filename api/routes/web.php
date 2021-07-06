@@ -19,9 +19,12 @@ use App\Http\Controllers\SongPlaylistsController;
 
 Route::post('/songs', [SongsController::class, 'store']);
 Route::get('/songs', [SongsController::class, 'index']);
+
 Route::post('/playlists', [PlaylistsController::class, 'store']);
 Route::get('/playlists', [PlaylistsController::class, 'index']);
+Route::delete('/playlists', [PlaylistsController::class, 'destroy']);
+Route::patch('/playlists', [PlaylistsController::class, 'update']);
+
 Route::post('/song-playlists', [SongPlaylistsController::class, 'store']);
 Route::get('/song-playlists', [SongPlaylistsController::class, 'index']);
-
-?>
+Route::delete('/song-playlists', [SongPlaylistsController::class, 'destroy']);

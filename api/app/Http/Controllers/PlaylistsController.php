@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Playlist;
+use App\SongPlaylist;
+use Illuminate\Support\Facades\DB;
 
 class PlaylistsController extends Controller
 {
@@ -52,9 +54,16 @@ class PlaylistsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request)
     {
-        //
+        $playlist_id = $request->input('playlist_id');
+        $name = $request->input('name');
+
+        return DB::table('playlists')
+            ->where('id', '=', $playlist_id)
+            ->update([
+                'name' => $name
+            ]);
     }
 
     /**
@@ -63,8 +72,18 @@ class PlaylistsController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(Request $request)
     {
-        //
+        $playlist_id = $request->input('playlist_id');
+
+        DB::table('song_playlists')
+            ->where('playlist_id', '=', $playlist_id)
+            ->delete();
+
+        DB::table('playlists')
+            ->where('id', '=', $playlist_id)
+            ->delete();
+
+        return true;
     }
 }

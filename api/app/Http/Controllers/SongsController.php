@@ -18,10 +18,10 @@ class SongsController extends Controller
         $playlist_id = $request->input('playlist_id');
 
         return DB::table('songs')
-            ->leftJoin('song_playlists', 'song_playlists.song_id', '=', 'songs.id')
+            ->leftJoin('song_playlists', 'song_playlists.song_id', 'songs.id')
             ->select('songs.*')
             ->when($playlist_id, function ($q, $playlist_id) {
-                return $q->where('song_playlists.id', '=', $playlist_id);
+                return $q->where('song_playlists.playlist_id', '=', $playlist_id);
             })
             ->get();
     }
@@ -37,6 +37,7 @@ class SongsController extends Controller
         $title = $request->input('title');
         $artist = $request->input('artist');
         $album = $request->input('album');
+        $duration = $request->input('duration');
         $path = $request->file('file')->store('public');
 
         $filename = explode('/', $path)[1];
@@ -47,6 +48,7 @@ class SongsController extends Controller
             'title' => $title,
             'artist' => $artist,
             'album' => $album,
+            'duration' => $duration,
             'path' => $filename
         ]);
 

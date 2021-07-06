@@ -10,14 +10,5 @@ class Song extends Model
 
     protected $primaryKey = 'id';
 
-    protected $fillable = ['title', 'artist', 'album', 'path'];
-
-    public function scopePlaylist($query, $playlist)
-    {
-        if ($playlist) {
-            return $query->where('song_playlists.id', '=',  $playlist);
-        }
-
-        return $query;
-    }
+    protected $fillable = ['title', 'artist', 'album', 'path', 'duration'];
 }

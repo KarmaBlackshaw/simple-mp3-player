@@ -39,7 +39,11 @@
             </v-list-item-content>
           </v-list-item>
 
-          <v-list-item>
+          <v-list-item
+            :input-value="0"
+            inactive
+            @click="$router.push(`/`)"
+          >
             <v-list-item-icon>
               <v-icon>mdi-music-circle</v-icon>
             </v-list-item-icon>
@@ -70,6 +74,8 @@
           <v-list-item
             v-for="(currPlaylist, playlistKey) in playlists"
             :key="playlistKey"
+            :input-value="Number($route.params.playlist_id) === Number(currPlaylist.id)"
+            @click="$router.push(`/${currPlaylist.id}`)"
           >
             <v-list-item-icon class="ml-5">
               <v-icon small>
@@ -96,14 +102,16 @@
     </v-app-bar>
 
     <v-main>
-      <v-container fluid>
+      <v-container
+        v-if="loadedAudios && loadedAudios === songs.length"
+        fluid
+      >
         <div>
           <v-simple-table
             fab
             large
             color="blue darken-1"
           >
-            >
             <template v-slot:default>
               <thead>
                 <tr>
@@ -119,7 +127,9 @@
                   <th class="text-left">
                     Duration
                   </th>
-                  <th class="text-left">
+                  <th
+                    class="text-left"
+                  >
                   </th>
                 </tr>
               </thead>
@@ -144,12 +154,29 @@
                     >
                       <v-icon>mdi-play</v-icon>
                     </v-btn>
+
+                    <v-btn
+                      text
+                      small
+                      rounded
+                      @click="handleClickOpenAddToPlaylist({ item })"
+                    >
+                      <v-icon>mdi-playlist-plus</v-icon>
+                    </v-btn>
                   </td>
                 </tr>
               </tbody>
             </template>
           </v-simple-table>
         </div>
+      </v-container>
+
+      <v-container
+        v-else
+        class="d-flex justify-center align-center display-1 font-weight-light"
+        style="height: 100%"
+      >
+        Loading...
       </v-container>
     </v-main>
 
@@ -342,6 +369,49 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <v-dialog
+      v-model="modals.addSongToPlaylist.status"
+      width="500"
+    >
+      <v-card>
+        <v-card-title class="text-h5 grey lighten-2">
+          Add Song to Playlist
+        </v-card-title>
+
+        <v-card-text>
+          <v-list rounded>
+            <v-subheader>Playlists</v-subheader>
+            <v-list-item-group
+              color="primary"
+            >
+              <v-list-item
+                v-for="(currPlaylist, playlistKey) in playlists"
+                :key="playlistKey"
+                @click="handleClickAddToPlaylist({ item: currPlaylist })"
+              >
+                <v-list-item-content>
+                  <v-list-item-title v-text="currPlaylist.name" />
+                </v-list-item-content>
+              </v-list-item>
+            </v-list-item-group>
+          </v-list>
+        </v-card-text>
+
+        <v-divider />
+
+        <v-card-actions>
+          <v-spacer />
+          <v-btn
+            color="primary"
+            text
+            @click="handleClickCreatePlaylist"
+          >
+            Create
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-app>
 </template>
 
@@ -406,12 +476,29 @@ export default {
             name: null
           };
         }
+      },
+
+      addSongToPlaylist: {
+        status: 0,
+        data: {
+          song_id: null,
+          playlist_id: null
+        },
+        reset() {
+          this.status = 0;
+          this.data = {
+            song_id: null,
+            playlist_id: null
+          };
+        }
       }
     },
 
     songs: [],
 
-    playlists: []
+    playlists: [],
+
+    loadedAudios: 0
   }),
 
   computed: {
@@ -422,17 +509,32 @@ export default {
         return false
       }
 
-      if (!currentPlaying.paused || currentPlaying.currentTime) {
-        return true
+      if (currentPlaying.paused) {
+        return false
+      }
+
+      if (!currentPlaying.currentTime) {
+        return false
       }
 
       return true
     }
   },
 
+  watch: {
+    '$route': {
+      async handler (val) {
+        await this.getSongs({
+          playlist_id: val.params.playlist_id
+        })
+      },
+
+      immediate: true
+    }
+  },
+
   async created () {
     await this.getPlaylist()
-    await this.getSongs()
   },
 
   methods: {
@@ -453,10 +555,7 @@ export default {
       const modal = this.modals.editSong;
 
       modal.status = 1;
-      modal.data = {
-        ...item,
-        index
-      };
+      modal.data = {...item,index};
     },
 
     handleClickEditSong() {
@@ -519,15 +618,21 @@ export default {
       }
     },
 
-    async getSongs () {
+    async getSongs (params) {
       try {
-        const response = await axios.get('/songs')
+        this.loadedAudios = 0
+
+        const apiUrl = process.env.VUE_APP_API_URL
+        const response = await axios.get('/songs', {params})
 
         const songs = response.data
 
+        const loadedAudio = () => this.loadedAudios++
+
         for (let i = 0; i < songs.length; i++) {
           const curr = songs[i];
-          curr.audio = new Audio(`http://localhost:8000/storage/${curr.path}`)
+          curr.audio = new Audio(`${apiUrl}/storage/${curr.path}`)
+          curr.audio.addEventListener('canplaythrough', loadedAudio, false);
         }
 
         this.songs = songs
@@ -549,12 +654,30 @@ export default {
         formData.append('album', modal.data.album)
         formData.append('file', modal.data.file)
 
-        const repsonse = await axios.post('/songs', formData)
-        console.log(repsonse)
+        await axios.post('/songs', formData)
+
+        this.loadedAudios = 0
 
         await this.getSongs()
 
         modal.reset();
+      } catch (error) {
+        console.log(error)
+      }
+    },
+
+    handleClickOpenAddToPlaylist ({item}) {
+      const modal = this.modals.addSongToPlaylist
+      modal.data.song_id = item.id
+      modal.status = true
+    },
+
+    async handleClickAddToPlaylist ({item}) {
+      try {
+        const modal = this.modals.addSongToPlaylist
+        modal.data.playlist_id = item.id
+
+        await axios.post('/song-playlists', modal.data)
       } catch (error) {
         console.log(error)
       }

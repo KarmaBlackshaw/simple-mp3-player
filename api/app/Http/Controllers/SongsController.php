@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use App\Song;
 
 class SongsController extends Controller
@@ -12,9 +13,17 @@ class SongsController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        return Song::all();
+        $playlist_id = $request->input('playlist_id');
+
+        return DB::table('songs')
+            ->leftJoin('song_playlists', 'song_playlists.song_id', '=', 'songs.id')
+            ->select('songs.*')
+            ->when($playlist_id, function ($q, $playlist_id) {
+                return $q->where('song_playlists.id', '=', $playlist_id);
+            })
+            ->get();
     }
 
     /**
@@ -42,7 +51,6 @@ class SongsController extends Controller
         ]);
 
         return $song;
-
     }
 
     /**

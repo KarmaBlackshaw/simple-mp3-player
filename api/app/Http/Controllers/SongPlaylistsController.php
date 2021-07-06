@@ -14,7 +14,7 @@ class SongPlaylistsController extends Controller
      */
     public function index()
     {
-        return SongPlaylist::all();
+        return DB::all();
     }
 
     /**

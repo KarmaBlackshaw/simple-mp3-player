@@ -10,7 +10,10 @@ Play song, add playlist and more!
 * MySQL
 
 ## Installation
-Use the package manager npm and composer to setup the project. Create an empty database `mp3`.
+Use the package manager npm and composer to setup the project. 
+
+###### Database Setup
+Create an empty database `mp3`.
 
 ###### UI Installation
 ```bash
